@@ -3,12 +3,21 @@ import path from 'node:path';
 import Store from 'electron-store';
 
 const store = new Store();
-store.delete('chatHistory');
+
+const cleanupChatHistory = () => {
+  const currentHistory = (store.get('chatHistory') || []) as any[];
+  const folderMap = (store.get('folderMap') || {}) as Record<string, string>;
+  const keptChats = currentHistory.filter(c => c.isPinned || folderMap[c.url]);
+  store.set('chatHistory', keptChats);
+};
+cleanupChatHistory();
 
 const userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+
 const mobileUserAgent = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
 
 app.commandLine.appendSwitch('user-agent', userAgent);
+app.setName('GemiDesk');
 app.userAgentFallback = userAgent;
 app.commandLine.appendSwitch('disable-infobars');
 
@@ -260,26 +269,78 @@ ipcMain.on('chat-title-changed', (event, title) => {
   }
 });
 
-ipcMain.on('chat-history', (_event, newChats) => {
+ipcMain.on('chat-history', (_event, newChats, isGlobalSidebar = true, bumpActiveChatId = null) => {
   if (win) {
     const storedChats = (store.get('chatHistory') || []) as any[];
-    const chatMap = new Map<string, any>();
+    let merged: any[] = [];
     
-    newChats.forEach((chat: any) => {
-      chatMap.set(getChatId(chat.url), chat);
-    });
-    
-    storedChats.forEach((chat: any) => {
-      const id = getChatId(chat.url);
-      if (!chatMap.has(id)) {
-        chatMap.set(id, chat);
+    if (isGlobalSidebar) {
+      const chatMap = new Map<string, any>();
+      
+      newChats.forEach((chat: any) => {
+        chatMap.set(getChatId(chat.url), chat);
+      });
+      
+      storedChats.forEach((chat: any) => {
+        const id = getChatId(chat.url);
+        if (!chatMap.has(id)) {
+          chatMap.set(id, chat);
+        }
+      });
+      
+      merged = Array.from(chatMap.values());
+    } else {
+      const storedIds = new Set(storedChats.map(c => getChatId(c.url)));
+      const trulyNewChats = newChats.filter((c: any) => !storedIds.has(getChatId(c.url)));
+      
+      const newChatMap = new Map<string, any>();
+      newChats.forEach((c: any) => newChatMap.set(getChatId(c.url), c));
+      
+      const updatedStoredChats = storedChats.map(c => {
+        const id = getChatId(c.url);
+        if (newChatMap.has(id)) {
+          return { ...c, ...newChatMap.get(id) };
+        }
+        return c;
+      });
+      
+      merged = [...trulyNewChats, ...updatedStoredChats];
+    }
+
+    if (bumpActiveChatId) {
+      const activeIdx = merged.findIndex(c => getChatId(c.url) === bumpActiveChatId);
+      if (activeIdx > 0) {
+        const [activeChat] = merged.splice(activeIdx, 1);
+        
+        const folderMap = (store.get('folderMap') || {}) as Record<string, string>;
+        let insertIdx = 0;
+        for (let i = merged.length - 1; i >= 0; i--) {
+          if (merged[i].isPinned && !folderMap[merged[i].url]) {
+            insertIdx = i + 1;
+            break;
+          }
+        }
+        
+        merged.splice(insertIdx, 0, activeChat);
       }
-    });
-    
-    const merged = Array.from(chatMap.values());
+    }
+
     store.set('chatHistory', merged);
     win.webContents.send('chat-history', merged);
   }
+});
+
+ipcMain.handle('clear-app-data', async () => {
+  store.clear();
+  app.relaunch();
+  app.exit();
+});
+
+ipcMain.handle('logout', async () => {
+  store.clear();
+  await session.defaultSession.clearStorageData();
+  app.relaunch();
+  app.exit();
 });
 
 ipcMain.on('toggle-pin-chat', (_event, url) => {
@@ -349,15 +410,16 @@ function createWindow() {
       preload: path.join(__dirname, '../preload/preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
+      backgroundThrottling: true,
     }
   });
   scraperView.webContents.setUserAgent(userAgent);
-  // Do not attach the scraper view to the window to prevent GPU compositing lag
+  scraperView.webContents.setAudioMuted(true);
   scraperView.webContents.loadURL('https://gemini.google.com/gems/view');
   
   setInterval(() => {
     scraperView.webContents.loadURL('https://gemini.google.com/gems/view');
-  }, 1000 * 60 * 10);
+  }, 1000 * 60 * 30);
 }
 
 app.on('window-all-closed', () => {

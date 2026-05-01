@@ -872,6 +872,13 @@ export default function App() {
                   <Settings size={18} />
                   <span>Erweitert</span>
                 </button>
+                <button
+                  onClick={() => setActiveSettingsTab('data')}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${activeSettingsTab === 'data' ? 'bg-[var(--bg-card)] text-[var(--accent)] border border-[var(--border-color)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
+                >
+                  <Trash2 size={18} />
+                  <span>Daten</span>
+                </button>
               </div>
 
               {/* Modal Content */}
@@ -1100,6 +1107,44 @@ export default function App() {
                       </div>
                     </div>
 
+                  </div>
+                )}
+                {activeSettingsTab === 'data' && (
+                  <div className="space-y-8 animate-fade-in">
+                    <div>
+                      <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-widest mb-4">App-Daten verwalten</h3>
+                      <div className="space-y-4">
+                        <div className="settings-item flex-col items-start gap-4">
+                          <div className="flex items-center gap-4 w-full">
+                            <Trash2 className="text-orange-400" />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-orange-400">Cache & App-Daten leeren</p>
+                              <p className="text-xs text-[var(--text-secondary)] opacity-60">Setzt die App auf Werkseinstellungen zurück. Gemini-Login bleibt erhalten.</p>
+                            </div>
+                            <button onClick={() => {
+                              if (confirm('Möchtest du wirklich alle lokalen App-Daten löschen? Deine Chats bei Gemini bleiben erhalten.')) {
+                                (window as any).ipcRenderer.invoke('clear-app-data');
+                              }
+                            }} className="px-4 py-2 bg-orange-500/20 text-orange-400 rounded-lg text-sm hover:bg-orange-500/30 transition-colors">Zurücksetzen</button>
+                          </div>
+                        </div>
+
+                        <div className="settings-item flex-col items-start gap-4">
+                          <div className="flex items-center gap-4 w-full">
+                            <X className="text-red-400" />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-red-400">Vollständiger Logout</p>
+                              <p className="text-xs text-[var(--text-secondary)] opacity-60">Löscht alle Daten UND meldet dich von Gemini ab.</p>
+                            </div>
+                            <button onClick={() => {
+                              if (confirm('Möchtest du dich komplett abmelden? App wird danach neu gestartet.')) {
+                                (window as any).ipcRenderer.invoke('logout');
+                              }
+                            }} className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg text-sm hover:bg-red-500/30 transition-colors">Abmelden</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

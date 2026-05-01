@@ -117,8 +117,12 @@ window.addEventListener('DOMContentLoaded', () => {
       if (inputArea) {
         const inputObserver = new MutationObserver(() => {
           if ((inputArea as HTMLElement).innerText.trim() === '') {
-            setTimeout(() => scrapeChatHistory(true), 500);
-            setTimeout(() => scrapeChatHistory(true), 2000);
+            if (scrapeTimeout) clearTimeout(scrapeTimeout);
+            scrapeTimeout = setTimeout(() => {
+              const activeChatId = extractChatId(location.href);
+              (window as any).bumpChatId = activeChatId;
+              scrapeChatHistory(true);
+            }, 2500);
           }
         });
         inputObserver.observe(inputArea, { childList: true, characterData: true, subtree: true });
@@ -140,7 +144,7 @@ window.addEventListener('DOMContentLoaded', () => {
     let gemScrapeTimeout: ReturnType<typeof setTimeout> | null = null;
     const debouncedGemScrape = () => {
       if (gemScrapeTimeout) clearTimeout(gemScrapeTimeout);
-      gemScrapeTimeout = setTimeout(() => scrapeGems(), 1000);
+      gemScrapeTimeout = setTimeout(() => scrapeGems(), 2000);
     };
     const gemObserver = new MutationObserver(() => debouncedGemScrape());
 
@@ -154,7 +158,7 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     };
     observeGems();
-    setInterval(scrapeGems, 5000);
+    setInterval(scrapeGems, 30000);
 
     let lastUrl = '';
     const activeGemObserver = new MutationObserver(() => {
@@ -164,7 +168,7 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     });
     activeGemObserver.observe(document.body, { childList: true, subtree: true });
-    setInterval(detectActiveGemIcon, 2000);
+    setInterval(detectActiveGemIcon, 10000);
 
     ipcRenderer.on('load-more-chats', () => {
       lazyLoadChats();
@@ -214,8 +218,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
             document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
             document.body.click();
-            
-            // Force scrape after a short delay to update real-time
+
             setTimeout(() => scrapeChatHistory(true), 300);
             setTimeout(() => scrapeChatHistory(true), 1000);
           }, 250);
@@ -600,10 +603,19 @@ function getGemIdFromContext(): string | null {
   return null;
 }
 
-function getGemIdFromChatIdRigorous(chatId: string): string | null {
+const extractChatId = (url: string) => {
+  if (!url) return null;
+  const match = url.match(/\/([a-zA-Z0-9_-]+)(?:\?.*)?$/);
+  return match ? match[1] : null;
+};
+
+function getGemIdFromChatIdRigorous(chatId: string, preFetchedHtml?: string): string | null {
   if (!chatId) return null;
   const stored = getStoredGemId(chatId);
-  if (stored) return stored;
+  if (stored) {
+    if (stored === 'NONE') return null;
+    return stored;
+  }
 
   const links = Array.from(document.querySelectorAll(`a[href*="${chatId}"]`));
   for (const link of links) {
@@ -615,18 +627,19 @@ function getGemIdFromChatIdRigorous(chatId: string): string | null {
     }
   }
 
-  const html = document.documentElement.innerHTML;
+  const html = preFetchedHtml || document.documentElement.innerHTML;
   const idx = html.indexOf(`"${chatId}"`);
   if (idx !== -1) {
     const chunk = html.substring(Math.max(0, idx - 800), idx + 800);
-    const gemMatches = chunk.match(/"([cgp]_[a-zA-Z0-9_]{10,})"/g) || [];
+    const gemMatches = chunk.match(/"([cgp]_[a-zA-Z0-9_]{10,}|[a-f0-9]{12,16})"/g) || [];
     for (const m of gemMatches) {
       const clean = m.replace(/"/g, '');
-      if (clean !== chatId) {
+      if (clean !== chatId && clean.length >= 12) {
         saveGemId(chatId, clean);
         return clean;
       }
     }
+    saveGemId(chatId, 'NONE');
   }
   return null;
 }
@@ -637,6 +650,7 @@ function scrapeChatHistory(forceSend = false) {
   const currentGemId = getGemIdFromContext();
   const chatLinks = Array.from(document.querySelectorAll('a[href*="/app/"], a.conversation, a[href*="/gem/"]'));
   const scrapedByChatId = new Map<string, { title: string, url: string, isPinned: boolean, isGem?: boolean }>();
+  let cachedHtml = '';
 
   chatLinks.forEach(link => {
     const ariaLabel = link.getAttribute('aria-label') || '';
@@ -659,16 +673,21 @@ function scrapeChatHistory(forceSend = false) {
     let url = link.getAttribute('href') || '';
     if (url.startsWith('https://gemini.google.com')) url = url.replace('https://gemini.google.com', '');
 
-    const chatIdMatch = url.match(/\/app\/([a-zA-Z0-9_-]+)/) || url.match(/\/gem\/[^/]+\/([a-zA-Z0-9_-]+)/);
-    const chatId = chatIdMatch ? chatIdMatch[1] : null;
+    const chatId = extractChatId(url);
 
     if (!chatId) return;
 
     let gemIdMatchArray = url.match(/\/gem\/([a-zA-Z0-9_-]+)/);
-    let gemId = gemIdMatchArray ? gemIdMatchArray[1] : getStoredGemId(chatId);
+    let storedGemId = getStoredGemId(chatId);
+    let gemId = gemIdMatchArray ? gemIdMatchArray[1] : (storedGemId === 'NONE' ? null : storedGemId);
 
     const hasGemIcon = !!link.querySelector('.bot-icon-spark, .gem-icon, img[src*="spark"]');
     const isUrlGem = url.includes('/gem/');
+
+    if (!gemId && storedGemId !== 'NONE') {
+      if (!cachedHtml) cachedHtml = document.documentElement.innerHTML;
+      gemId = getGemIdFromChatIdRigorous(chatId, cachedHtml);
+    }
 
     if (!gemId && location.pathname.includes(chatId) && currentGemId) {
       if (hasGemIcon || isUrlGem || location.pathname.includes('/gem/')) {
@@ -695,13 +714,13 @@ function scrapeChatHistory(forceSend = false) {
   Array.from(scrapedByChatId.values()).forEach(chat => {
     if (chat.isPinned) {
       finalScraped.push(chat);
-      const id = chat.url.match(/\/([a-zA-Z0-9_-]+)$/)?.[1];
+      const id = extractChatId(chat.url);
       if (id) processedIds.add(id);
     }
   });
 
   Array.from(scrapedByChatId.values()).forEach(chat => {
-    const id = chat.url.match(/\/([a-zA-Z0-9_-]+)$/)?.[1];
+    const id = extractChatId(chat.url);
     if (!chat.isPinned && id && !processedIds.has(id)) {
       finalScraped.push(chat);
       processedIds.add(id);
@@ -709,10 +728,10 @@ function scrapeChatHistory(forceSend = false) {
   });
 
   for (const [url, chat] of accumulatedChats.entries()) {
-    const id = url.match(/\/([a-zA-Z0-9_-]+)$/)?.[1];
+    const id = extractChatId(url);
     if (id && !processedIds.has(id)) {
       const knownGemId = getStoredGemId(id);
-      if (knownGemId && !chat.url.includes('/gem/')) {
+      if (knownGemId && knownGemId !== 'NONE' && !chat.url.includes('/gem/')) {
         chat.url = `/gem/${knownGemId}/${id}`;
         chat.isGem = true;
       }
@@ -724,10 +743,18 @@ function scrapeChatHistory(forceSend = false) {
   accumulatedChats.clear();
   finalScraped.forEach(chat => accumulatedChats.set(chat.url, chat));
 
+  const bumpChatId = (window as any).bumpChatId || null;
+  (window as any).bumpChatId = null;
+
   const chatsStr = JSON.stringify(finalScraped);
-  if (chatsStr !== lastChatsStr || forceSend) {
+  if (chatsStr !== lastChatsStr || forceSend || bumpChatId) {
     lastChatsStr = chatsStr;
-    ipcRenderer.send('chat-history', finalScraped);
+    const isGemSidebar = location.pathname.includes('/gem/') ||
+      !!document.querySelector('header img[src*="googleusercontent"]:not([alt*="Account"]):not([alt*="Konto"])') ||
+      !!currentGemId;
+    const isGlobalSidebar = !isGemSidebar;
+
+    ipcRenderer.send('chat-history', finalScraped, isGlobalSidebar, bumpChatId);
   }
 }
 

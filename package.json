@@ -1,6 +1,6 @@
 {
   "name": "gemidesk",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "dist-electron/main/main.js",
   "description": "GemiDesk - Native Desktop Client for Gemini",
   "author": "Tim",

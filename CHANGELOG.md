@@ -5,14 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2026-05-02
 
 ### Added
-- **Performance Improvements:** Disabled backdrop-filter blur effects, optimized CSS hover states, and detached the hidden scraper view from the main window to prevent GPU compositing lag on low-end devices.
-- **Data Cleanup:** The chat history store is now cleared on app startup to prevent unbounded memory growth and UI lag when scrolling to old items.
+- **Data Management:** Added a new "Data" tab in settings allowing users to clear app cache/data or perform a full logout (clearing Google sessions).
+- **Intelligent Gem ID Detection:** Improved Gem ID discovery by scraping the page HTML when IDs are missing from URLs, ensuring seamless transitions between standard and Gem chats.
+- **Session Persistence:** Gem IDs are now persisted in `localStorage`, preventing "Gem deleted" errors and broken links across sessions.
+- **Improved Chat Sorting:** Implemented a "bump" mechanism that ensures the currently active chat is always visible at the top of the unpinned list in the sidebar.
+- **Performance Improvements:** Significantly reduced background CPU usage by optimizing interval timers, refining mutation observers, preventing heavy DOM queries on `document.body`, and throttling the hidden background scraper view. Ideal for low-power modes.
 
 ### Fixed
+- **Gem URL Resolution:** Gem chats are now proactively identified and parsed from the initial DOM load. Links are translated instantly without waiting for user interaction or error pages.
+- **Chat Order Stability:** Fixed a bug where opening a Gem chat would reorder the global chat history by overriding it with the Gem-specific sidebar list.
+- **Data Cleanup & Synchronization:** The global chat history is now selectively cleared on app startup (while preserving pinned chats and folder contents) to stay perfectly in sync with the live webview and resolve infinite loading loops.
 - **Pinning & Unpinning Chats:** Fixed the logic for pinning/unpinning chats to correctly forward events to the Gemini wrapper and optimistically update the sidebar UI in real-time.
+- **Taskbar Grouping:** Fixed an issue on Linux where the app would show multiple icons in the taskbar when pinned; the window is now correctly grouped under the GemiDesk launcher.
 
 ## [1.0.0] - 2026-04-26
 
@@ -36,3 +43,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 [1.0.0]: https://github.com/TimH-DE/GemiDesk/releases/tag/v1.0.0
+[1.1.0]: https://github.com/TimH-DE/GemiDesk/releases/tag/v1.1.0

@@ -53,6 +53,7 @@
               desktopName = "GemiDesk";
               genericName = "Gemini Desktop Client";
               categories = [ "Office" "Network" ];
+              startupWMClass = "GemiDesk";
             })
           ];
         };
