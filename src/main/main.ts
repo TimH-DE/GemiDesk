@@ -283,6 +283,15 @@ ipcMain.on('chat-history', (_event, newChats) => {
   }
 });
 
+ipcMain.on('toggle-pin-chat', (_event, url) => {
+  if (activeTabId && tabs.has(activeTabId)) {
+    const view = tabs.get(activeTabId);
+    if (view) {
+      view.webContents.send('toggle-pin-chat', url);
+    }
+  }
+});
+
 ipcMain.on('gem-history', (_event, gems) => {
   if (win) {
     store.set('gems', gems);

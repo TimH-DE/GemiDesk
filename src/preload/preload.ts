@@ -189,8 +189,10 @@ window.addEventListener('DOMContentLoaded', () => {
         if (menuBtn) {
           menuBtn.click();
           setTimeout(() => {
-            const menuItems = Array.from(document.querySelectorAll('[role="menuitem"], button'));
+            const overlay = document.querySelector('.cdk-overlay-container') || document.body;
+            const menuItems = Array.from(overlay.querySelectorAll('[role="menuitem"], button, a, span'));
             const pinBtn = menuItems.find(item => {
+              if (item === menuBtn) return false;
               const text = (item.textContent || '').toLowerCase();
               const ariaLabel = (item.getAttribute('aria-label') || '').toLowerCase();
               return text.includes('anpinnen') || text.includes('pin') || text.includes('loslösen') || text.includes('unpin') ||
@@ -200,7 +202,7 @@ window.addEventListener('DOMContentLoaded', () => {
             if (pinBtn) {
               (pinBtn as HTMLElement).click();
             } else {
-              const allElements = Array.from(document.querySelectorAll('.cdk-overlay-container span'));
+              const allElements = Array.from(overlay.querySelectorAll('span, div'));
               const fallbackBtn = allElements.find(item => {
                 const text = (item.textContent || '').toLowerCase();
                 return text.includes('anpinnen') || text.includes('pin') || text.includes('loslösen') || text.includes('unpin');
@@ -212,6 +214,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
             document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
             document.body.click();
+            
+            // Force scrape after a short delay to update real-time
+            setTimeout(() => scrapeChatHistory(true), 300);
+            setTimeout(() => scrapeChatHistory(true), 1000);
           }, 250);
         }
       }

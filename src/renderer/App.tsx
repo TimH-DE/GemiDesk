@@ -1187,9 +1187,19 @@ export default function App() {
             <button onClick={() => { handleRemoveFromFolder([contextMenuPos.url]); setContextMenuPos(null); }} className="w-full text-left px-4 py-2 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:text-red-400 flex items-center gap-3"><FolderMinus size={14} /> Aus Ordner entfernen</button>
           )}
           {chats.find(c => c.url === contextMenuPos.url)?.isPinned ? (
-            <button onClick={() => { (window as any).ipcRenderer.send('toggle-pin-chat', contextMenuPos.url); setContextMenuPos(null); }} className="w-full text-left px-4 py-2 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent)] flex items-center gap-3"><PinOff size={14} /> Loslösen</button>
+            <button onClick={() => { 
+              const url = contextMenuPos.url;
+              (window as any).ipcRenderer.send('toggle-pin-chat', url); 
+              setChats(prev => prev.map(c => c.url === url ? { ...c, isPinned: false } : c));
+              setContextMenuPos(null); 
+            }} className="w-full text-left px-4 py-2 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent)] flex items-center gap-3"><PinOff size={14} /> Loslösen</button>
           ) : (
-            <button onClick={() => { (window as any).ipcRenderer.send('toggle-pin-chat', contextMenuPos.url); setContextMenuPos(null); }} className="w-full text-left px-4 py-2 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent)] flex items-center gap-3"><Pin size={14} /> Anpinnen</button>
+            <button onClick={() => { 
+              const url = contextMenuPos.url;
+              (window as any).ipcRenderer.send('toggle-pin-chat', url); 
+              setChats(prev => prev.map(c => c.url === url ? { ...c, isPinned: true } : c));
+              setContextMenuPos(null); 
+            }} className="w-full text-left px-4 py-2 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent)] flex items-center gap-3"><Pin size={14} /> Anpinnen</button>
           )}
           <button onClick={() => { handleOpenInNewTab(contextMenuPos.url); setContextMenuPos(null); }} className="w-full text-left px-4 py-2 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent)] flex items-center gap-3 border-t border-[var(--border-color)] mt-1 pt-2"><Plus size={14} /> In neuem Tab öffnen</button>
         </div>
