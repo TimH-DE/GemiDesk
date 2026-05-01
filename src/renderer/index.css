@@ -55,8 +55,7 @@
   }
 
   .glass-effect {
-    backdrop-filter: blur(12px);
-    background: rgba(30, 31, 32, 0.7);
+    background: rgba(30, 31, 32, 0.95);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
@@ -136,9 +135,9 @@ body {
 }
 
 @keyframes gem-pulse {
-  0% { transform: scale(1); filter: brightness(1); }
-  50% { transform: scale(1.05); filter: brightness(1.2); }
-  100% { transform: scale(1); filter: brightness(1); }
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }
 
 .tab-icon-transition {

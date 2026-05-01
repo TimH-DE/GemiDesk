@@ -3,6 +3,8 @@ import path from 'node:path';
 import Store from 'electron-store';
 
 const store = new Store();
+store.delete('chatHistory');
+
 const userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
 const mobileUserAgent = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
 
@@ -25,16 +27,13 @@ const updateViewBounds = () => {
   const view = tabs.get(activeTabId);
   if (!view) return;
   
-  setTimeout(() => {
-    if (!win) return;
-    const bounds = win.getContentBounds();
-    view.setBounds({
-      x: currentSidebarWidth,
-      y: 48,
-      width: bounds.width - currentSidebarWidth,
-      height: bounds.height - 48
-    });
-  }, 50);
+  const bounds = win.getContentBounds();
+  view.setBounds({
+    x: currentSidebarWidth,
+    y: 48,
+    width: bounds.width - currentSidebarWidth,
+    height: bounds.height - 48
+  });
 };
 
 
@@ -103,7 +102,7 @@ ipcMain.handle('new-tab', (_event, id: string, url: string = 'https://gemini.goo
     }
   });
   
-  view.setAutoResize({ width: true, height: true, horizontal: true, vertical: true });
+  view.setAutoResize({ width: true, height: true, horizontal: false, vertical: false });
   view.webContents.setUserAgent(userAgent);
   tabs.set(id, view);
   view.webContents.loadURL(url);
@@ -353,19 +352,12 @@ function createWindow() {
     }
   });
   scraperView.webContents.setUserAgent(userAgent);
-  win.addBrowserView(scraperView);
-  scraperView.setBounds({ x: -2000, y: -2000, width: 1000, height: 1000 });
+  // Do not attach the scraper view to the window to prevent GPU compositing lag
   scraperView.webContents.loadURL('https://gemini.google.com/gems/view');
   
   setInterval(() => {
     scraperView.webContents.loadURL('https://gemini.google.com/gems/view');
   }, 1000 * 60 * 10);
-
-  win.on('resize', updateViewBounds);
-  win.on('maximize', updateViewBounds);
-  win.on('unmaximize', updateViewBounds);
-  win.on('enter-full-screen', updateViewBounds);
-  win.on('leave-full-screen', updateViewBounds);
 }
 
 app.on('window-all-closed', () => {

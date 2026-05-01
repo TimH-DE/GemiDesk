@@ -31,7 +31,6 @@ export default function App() {
   const [newFolderName, setNewFolderName] = useState('');
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editingFolderName, setEditingFolderName] = useState('');
-  const [hoveredChat, setHoveredChat] = useState<string | null>(null);
   const [isFolderPopupOpen, setIsFolderPopupOpen] = useState<string | null>(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [contextMenuPos, setContextMenuPos] = useState<{ x: number, y: number, url: string } | null>(null);
@@ -305,13 +304,13 @@ export default function App() {
 
   useEffect(() => {
     let menuTimer: NodeJS.Timeout;
-    if (contextMenuPos && !isHoveringMenu && hoveredChat !== contextMenuPos.url) {
+    if (contextMenuPos && !isHoveringMenu) {
       menuTimer = setTimeout(() => {
         setContextMenuPos(null);
       }, 300);
     }
     return () => clearTimeout(menuTimer);
-  }, [contextMenuPos, isHoveringMenu, hoveredChat]);
+  }, [contextMenuPos, isHoveringMenu]);
 
   const prepareGemUrl = (url: string): string => {
     let finalUrl = url;
@@ -424,8 +423,6 @@ export default function App() {
                 const isActive = activeChatId && getChatId(chat.url) === activeChatId;
                 return (
                   <div key={chat.url}
-                    onMouseEnter={() => setHoveredChat(chat.url)}
-                    onMouseLeave={() => setHoveredChat(null)}
                     onClick={() => isSelectionMode ? undefined : handleChatClick(chat.url)}
                     className={`relative flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors text-sm group cursor-pointer 
                       ${isActive ? 'bg-[var(--bg-hover)] text-[var(--accent)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
@@ -630,8 +627,6 @@ export default function App() {
                     const isActive = activeChatId && getChatId(chat.url) === activeChatId;
                     return (
                       <div key={chat.url}
-                        onMouseEnter={() => setHoveredChat(chat.url)}
-                        onMouseLeave={() => setHoveredChat(null)}
                         onClick={() => isSelectionMode ? undefined : handleChatClick(chat.url)}
                         className={`relative flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm group cursor-pointer 
                           ${isActive ? 'bg-[var(--bg-hover)] text-[var(--accent)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-primary)]'}`}>
@@ -645,14 +640,14 @@ export default function App() {
                             <Pin size={10} className="text-[var(--accent)]" fill="currentColor" />
                           </div>
                         </div>
-                        <span className={`truncate flex-1 transition-all ${(hoveredChat === chat.url || contextMenuPos?.url === chat.url) && !isSelectionMode ? 'pr-7' : ''}`}>{chat.title}</span>
+                        <span className={`truncate flex-1 transition-all ${contextMenuPos?.url === chat.url && !isSelectionMode ? 'pr-7' : !isSelectionMode ? 'group-hover:pr-7' : ''}`}>{chat.title}</span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             const rect = e.currentTarget.getBoundingClientRect();
                             setContextMenuPos(contextMenuPos?.url === chat.url ? null : { x: rect.right, y: rect.bottom, url: chat.url });
                           }}
-                          className={`absolute right-2 p-1 hover:bg-[var(--bg-main)] rounded text-[var(--text-primary)] transition-opacity ${(hoveredChat === chat.url || contextMenuPos?.url === chat.url) && !isSelectionMode ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                          className={`absolute right-2 p-1 hover:bg-[var(--bg-main)] rounded text-[var(--text-primary)] transition-opacity ${contextMenuPos?.url === chat.url && !isSelectionMode ? 'opacity-100' : !isSelectionMode ? 'opacity-0 group-hover:opacity-100' : 'opacity-0 pointer-events-none'}`}
                         >
                           <MoreVertical size={14} />
                         </button>
@@ -685,8 +680,6 @@ export default function App() {
                     const isActive = activeChatId && getChatId(chat.url) === activeChatId;
                     return (
                       <div key={chat.url}
-                        onMouseEnter={() => setHoveredChat(chat.url)}
-                        onMouseLeave={() => setHoveredChat(null)}
                         onClick={() => isSelectionMode ? undefined : handleChatClick(chat.url)}
                         className={`relative flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm group cursor-pointer 
                           ${isActive ? 'bg-[var(--bg-hover)] text-[var(--accent)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-primary)]'}`}>
@@ -710,14 +703,14 @@ export default function App() {
                             )}
                           </div>
                         )}
-                        <span className={`truncate flex-1 transition-all ${(hoveredChat === chat.url || contextMenuPos?.url === chat.url) && !isSelectionMode ? 'pr-7' : ''}`}>{chat.title}</span>
+                        <span className={`truncate flex-1 transition-all ${contextMenuPos?.url === chat.url && !isSelectionMode ? 'pr-7' : !isSelectionMode ? 'group-hover:pr-7' : ''}`}>{chat.title}</span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             const rect = e.currentTarget.getBoundingClientRect();
                             setContextMenuPos(contextMenuPos?.url === chat.url ? null : { x: rect.right, y: rect.bottom, url: chat.url });
                           }}
-                          className={`absolute right-2 p-1 hover:bg-[var(--bg-main)] rounded text-[var(--text-primary)] transition-opacity ${(hoveredChat === chat.url || contextMenuPos?.url === chat.url) && !isSelectionMode ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                          className={`absolute right-2 p-1 hover:bg-[var(--bg-main)] rounded text-[var(--text-primary)] transition-opacity ${contextMenuPos?.url === chat.url && !isSelectionMode ? 'opacity-100' : !isSelectionMode ? 'opacity-0 group-hover:opacity-100' : 'opacity-0 pointer-events-none'}`}
                         >
                           <MoreVertical size={14} />
                         </button>

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Performance Improvements:** Disabled backdrop-filter blur effects, optimized CSS hover states, and detached the hidden scraper view from the main window to prevent GPU compositing lag on low-end devices.
+- **Data Cleanup:** The chat history store is now cleared on app startup to prevent unbounded memory growth and UI lag when scrolling to old items.
+
 ### Fixed
 - **Pinning & Unpinning Chats:** Fixed the logic for pinning/unpinning chats to correctly forward events to the Gemini wrapper and optimistically update the sidebar UI in real-time.
 
