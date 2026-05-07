@@ -95,7 +95,6 @@ export default function App() {
     ipc.on('chat-title-changed', handleChatTitleChanged);
 
     const handleGemHistory = (_event: any, gems: { title: string, url: string, iconUrl: string }[]) => {
-      console.log('GemiDesk: Received gem-history:', gems);
       setGems(gems);
     };
     ipc.on('gem-history', handleGemHistory);
@@ -106,7 +105,6 @@ export default function App() {
     ipc.on('active-gem-icon', handleActiveGemIcon);
 
     const handleChatUrlChanged = (_event: any, tabId: string, url: string) => {
-      console.log('GemiDesk: chat-url-changed:', tabId, url);
       setTabs(prev => prev.map(t => t.id === tabId ? { ...t, url } : t));
     };
     ipc.on('chat-url-changed', handleChatUrlChanged);
