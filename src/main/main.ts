@@ -97,6 +97,7 @@ ipcMain.handle('new-tab', (_event, id: string, url: string = 'https://gemini.goo
       preload: path.join(__dirname, '../preload/preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: true,
     }
   });
 
@@ -390,6 +391,7 @@ function createWindow() {
       preload: path.join(__dirname, '../preload/preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: true,
     },
   });
 
@@ -410,6 +412,7 @@ function createWindow() {
       preload: path.join(__dirname, '../preload/preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: true,
       backgroundThrottling: true,
     }
   });
