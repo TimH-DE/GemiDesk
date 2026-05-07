@@ -1,4 +1,4 @@
-import { app, BrowserWindow, BrowserView, ipcMain, dialog, session } from 'electron';
+import { app, BrowserWindow, BrowserView, ipcMain, dialog, session, shell } from 'electron';
 import path from 'node:path';
 import Store from 'electron-store';
 
@@ -441,6 +441,35 @@ app.on('activate', () => {
 });
 
 app.whenReady().then(() => {
+  app.on('web-contents-created', (_, contents) => {
+    contents.on('will-navigate', (event, navigationUrl) => {
+      const parsedUrl = new URL(navigationUrl);
+      const isTrusted = parsedUrl.protocol === 'file:' ||
+                        (VITE_DEV_SERVER_URL && navigationUrl.startsWith(VITE_DEV_SERVER_URL)) ||
+                        parsedUrl.hostname === 'google.com' ||
+                        parsedUrl.hostname.endsWith('.google.com');
+
+      if (!isTrusted) {
+        event.preventDefault();
+        shell.openExternal(navigationUrl);
+      }
+    });
+
+    contents.setWindowOpenHandler(({ url }) => {
+      const parsedUrl = new URL(url);
+      const isTrusted = parsedUrl.protocol === 'file:' ||
+                        (VITE_DEV_SERVER_URL && url.startsWith(VITE_DEV_SERVER_URL)) ||
+                        parsedUrl.hostname === 'google.com' ||
+                        parsedUrl.hostname.endsWith('.google.com');
+
+      if (!isTrusted) {
+        shell.openExternal(url);
+        return { action: 'deny' };
+      }
+      return { action: 'allow' };
+    });
+  });
+
   session.defaultSession.webRequest.onBeforeSendHeaders((details: any, callback: any) => {
     if (details.url.includes('accounts.google.com')) {
       details.requestHeaders['User-Agent'] = mobileUserAgent;
