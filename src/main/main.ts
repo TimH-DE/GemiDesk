@@ -238,7 +238,7 @@ ipcMain.handle('export-pdf', async () => {
   });
 });
 
-const getChatId = (url: string) => {
+export const getChatId = (url: string) => {
   const match = url.match(/\/([a-zA-Z0-9_-]+)(?:\?.*)?$/);
   return match ? match[1] : url;
 };
