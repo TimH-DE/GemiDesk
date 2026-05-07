@@ -711,21 +711,21 @@ function scrapeChatHistory(forceSend = false) {
   const finalScraped: any[] = [];
   const processedIds = new Set<string>();
 
-  Array.from(scrapedByChatId.values()).forEach(chat => {
+  for (const chat of scrapedByChatId.values()) {
     if (chat.isPinned) {
       finalScraped.push(chat);
       const id = extractChatId(chat.url);
       if (id) processedIds.add(id);
     }
-  });
+  }
 
-  Array.from(scrapedByChatId.values()).forEach(chat => {
+  for (const chat of scrapedByChatId.values()) {
     const id = extractChatId(chat.url);
     if (!chat.isPinned && id && !processedIds.has(id)) {
       finalScraped.push(chat);
       processedIds.add(id);
     }
-  });
+  }
 
   for (const [url, chat] of accumulatedChats.entries()) {
     const id = extractChatId(url);
