@@ -13,6 +13,10 @@ const getChatId = (url: string) => {
   return match ? match[1] : url;
 };
 
+
+const dragStyle: React.CSSProperties = { WebkitAppRegion: 'drag' };
+const noDragStyle: React.CSSProperties = { WebkitAppRegion: 'no-drag' };
+
 export default function App() {
   const [tabs, setTabs] = useState<{ id: string, title: string, active: boolean, icon?: string | null, url?: string }[]>([{ id: 'tab-1', title: 'Neuer Chat', active: true }]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -737,16 +741,16 @@ export default function App() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col relative">
-        <div className="h-12 bg-[var(--bg-main)] flex items-center px-2 shadow-md z-10 space-x-1" style={{ WebkitAppRegion: 'drag' } as any}>
+        <div className="h-12 bg-[var(--bg-main)] flex items-center px-2 shadow-md z-10 space-x-1" style={dragStyle}>
           <button
             onClick={toggleSidebar}
             className="p-2 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-            style={{ WebkitAppRegion: 'no-drag' } as any}
+            style={noDragStyle}
           >
             <Menu size={18} />
           </button>
 
-          <div className="flex-1 flex items-center space-x-2 overflow-x-auto hide-scrollbar px-2" style={{ WebkitAppRegion: 'no-drag' } as any}>
+          <div className="flex-1 flex items-center space-x-2 overflow-x-auto hide-scrollbar px-2" style={noDragStyle}>
             {tabs.map(tab => (
               <div
                 key={tab.id}
@@ -781,7 +785,7 @@ export default function App() {
             </button>
           </div>
 
-          <div className="flex items-center space-x-2 px-2" style={{ WebkitAppRegion: 'no-drag' } as any}>
+          <div className="flex items-center space-x-2 px-2" style={noDragStyle}>
             <select
               value={selectedModel}
               onChange={handleModelChange}
