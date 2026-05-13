@@ -48,7 +48,7 @@ export default function App() {
   const tabUrls: Record<string, string> = tabs.reduce((acc, t) => ({ ...acc, [t.id]: t.url || '' }), {});
 
   useEffect(() => {
-    const ipc = (window as any).ipcRenderer;
+    const ipc = window.ipcRenderer;
     ipc.invoke('new-tab', 'tab-1').then(() => {
       ipc.invoke('switch-tab', 'tab-1');
     });
@@ -125,7 +125,7 @@ export default function App() {
     const updatedFolders = [...folders, newFolder];
     setFolders(updatedFolders);
     setNewFolderName('');
-    await (window as any).ipcRenderer.invoke('set-store', 'folders', updatedFolders);
+    await window.ipcRenderer.invoke('set-store', 'folders', updatedFolders);
   };
 
   const moveFolder = async (id: string, direction: 'up' | 'down') => {
@@ -150,7 +150,7 @@ export default function App() {
     [newFolders[folderIdx], newFolders[targetFolderIdx]] = [newFolders[targetFolderIdx], newFolders[folderIdx]];
 
     setFolders(newFolders);
-    await (window as any).ipcRenderer.invoke('set-store', 'folders', newFolders);
+    await window.ipcRenderer.invoke('set-store', 'folders', newFolders);
   };
 
   const handleDeleteFolder = async (id: string) => {
@@ -173,8 +173,8 @@ export default function App() {
     });
     setFolderMap(newMap);
 
-    await (window as any).ipcRenderer.invoke('set-store', 'folders', updatedFolders);
-    await (window as any).ipcRenderer.invoke('set-store', 'folderMap', newMap);
+    await window.ipcRenderer.invoke('set-store', 'folders', updatedFolders);
+    await window.ipcRenderer.invoke('set-store', 'folderMap', newMap);
   };
 
   const handleMoveFolderToParent = async (folderId: string, newParentId?: string) => {
@@ -195,7 +195,7 @@ export default function App() {
     const updatedFolders = folders.map(f => f.id === folderId ? { ...f, parentId: newParentId } : f);
     setFolders(updatedFolders);
     setMovingFolderId(null);
-    await (window as any).ipcRenderer.invoke('set-store', 'folders', updatedFolders);
+    await window.ipcRenderer.invoke('set-store', 'folders', updatedFolders);
   };
 
   const handleRenameFolder = async () => {
@@ -204,7 +204,7 @@ export default function App() {
     setFolders(updatedFolders);
     setEditingFolderId(null);
     setEditingFolderName('');
-    await (window as any).ipcRenderer.invoke('set-store', 'folders', updatedFolders);
+    await window.ipcRenderer.invoke('set-store', 'folders', updatedFolders);
   };
 
   const toggleFolder = async (id: string) => {
@@ -215,7 +215,7 @@ export default function App() {
       newExpanded.add(id);
     }
     setExpandedFolders(newExpanded);
-    await (window as any).ipcRenderer.invoke('set-store', 'expandedFolders', Array.from(newExpanded));
+    await window.ipcRenderer.invoke('set-store', 'expandedFolders', Array.from(newExpanded));
   };
 
   const loadMoreInFolder = (id: string) => {
@@ -229,8 +229,8 @@ export default function App() {
     const newTheme = appTheme === 'dark' ? 'light' : 'dark';
     setAppTheme(newTheme);
     document.documentElement.className = newTheme;
-    await (window as any).ipcRenderer.invoke('set-store', 'appTheme', newTheme);
-    await (window as any).ipcRenderer.invoke('set-theme', newTheme);
+    await window.ipcRenderer.invoke('set-store', 'appTheme', newTheme);
+    await window.ipcRenderer.invoke('set-theme', newTheme);
   };
 
   const handleNewTab = async () => {
@@ -238,20 +238,20 @@ export default function App() {
     const newTabs = tabs.map(t => ({ ...t, active: false }));
     newTabs.push({ id: newId, title: 'Neuer Chat', active: true });
     setTabs(newTabs);
-    const ipc = (window as any).ipcRenderer;
+    const ipc = window.ipcRenderer;
     await ipc.invoke('new-tab', newId);
     await ipc.invoke('switch-tab', newId);
   };
 
   const handleSwitchTab = async (id: string) => {
     setTabs(tabs.map(t => ({ ...t, active: t.id === id })));
-    await (window as any).ipcRenderer.invoke('switch-tab', id);
+    await window.ipcRenderer.invoke('switch-tab', id);
   };
 
   const handleModelChange = async (e: ChangeEvent<HTMLSelectElement>) => {
     const model = e.target.value;
     setSelectedModel(model);
-    const ipc = (window as any).ipcRenderer;
+    const ipc = window.ipcRenderer;
     await ipc.invoke('force-model', model);
     await ipc.invoke('set-store', 'selectedModel', model);
   };
@@ -261,17 +261,17 @@ export default function App() {
     const newTabs = tabs.filter(t => t.id !== id);
     if (newTabs.length === 0) {
       newTabs.push({ id: `tab-${Date.now()}`, title: 'Neuer Chat', active: true });
-      const ipc = (window as any).ipcRenderer;
+      const ipc = window.ipcRenderer;
       await ipc.invoke('new-tab', newTabs[0].id);
       await ipc.invoke('switch-tab', newTabs[0].id);
     } else if (tabs.find(t => t.id === id)?.active) {
       const activeIdx = tabs.findIndex(t => t.id === id);
       const nextIdx = activeIdx > 0 ? activeIdx - 1 : 0;
       newTabs[nextIdx].active = true;
-      await (window as any).ipcRenderer.invoke('switch-tab', newTabs[nextIdx].id);
+      await window.ipcRenderer.invoke('switch-tab', newTabs[nextIdx].id);
     }
     setTabs(newTabs);
-    await (window as any).ipcRenderer.invoke('close-tab', id);
+    await window.ipcRenderer.invoke('close-tab', id);
   };
 
   const handleMoveToFolder = async (folderId: string) => {
@@ -285,8 +285,8 @@ export default function App() {
     setFolderMap(newMap);
     setSelectedChats(new Set());
     setIsFolderPopupOpen(null);
-    (window as any).ipcRenderer.send('set-view-visibility', true);
-    await (window as any).ipcRenderer.invoke('set-store', 'folderMap', newMap);
+    window.ipcRenderer.send('set-view-visibility', true);
+    await window.ipcRenderer.invoke('set-store', 'folderMap', newMap);
   };
 
   const handleRemoveFromFolder = async (urls: string[]) => {
@@ -297,7 +297,7 @@ export default function App() {
     }
     setFolderMap(newMap);
     setSelectedChats(new Set());
-    await (window as any).ipcRenderer.invoke('set-store', 'folderMap', newMap);
+    await window.ipcRenderer.invoke('set-store', 'folderMap', newMap);
   };
 
   useEffect(() => {
@@ -334,7 +334,7 @@ export default function App() {
     if (behavior === 'new') {
       handleOpenInNewTab(finalUrl);
     } else {
-      await (window as any).ipcRenderer.invoke('load-url', finalUrl);
+      await window.ipcRenderer.invoke('load-url', finalUrl);
     }
   };
 
@@ -344,7 +344,7 @@ export default function App() {
     const newTabs = tabs.map(t => ({ ...t, active: false }));
     newTabs.push({ id: newId, title: 'Chat', active: true });
     setTabs(newTabs);
-    const ipc = (window as any).ipcRenderer;
+    const ipc = window.ipcRenderer;
     await ipc.invoke('new-tab', newId, finalUrl.startsWith('/') ? 'https://gemini.google.com' + finalUrl : finalUrl);
     await ipc.invoke('switch-tab', newId);
   };
@@ -352,13 +352,13 @@ export default function App() {
   const toggleSidebar = () => {
     const newState = !isSidebarOpen;
     setIsSidebarOpen(newState);
-    (window as any).ipcRenderer.send('toggle-sidebar', newState);
+    window.ipcRenderer.send('toggle-sidebar', newState);
   };
 
   const handleBulkDelete = async () => {
     if (selectedChats.size === 0) return;
     const urlsToDelete = Array.from(selectedChats);
-    await (window as any).ipcRenderer.invoke('bulk-delete', urlsToDelete);
+    await window.ipcRenderer.invoke('bulk-delete', urlsToDelete);
     setSelectedChats(new Set());
   };
 
@@ -380,7 +380,7 @@ export default function App() {
       if (behavior === 'new') {
         handleOpenInNewTab(url);
       } else {
-        await (window as any).ipcRenderer.invoke('load-url', url);
+        await window.ipcRenderer.invoke('load-url', url);
       }
     }
   };
@@ -565,7 +565,7 @@ export default function App() {
               if (target.scrollTop + target.clientHeight >= target.scrollHeight - 20) {
                 if (!isLoadingMore) {
                   setIsLoadingMore(true);
-                  (window as any).ipcRenderer.send('load-more-chats');
+                  window.ipcRenderer.send('load-more-chats');
                   setTimeout(() => setIsLoadingMore(false), 5000);
                 }
               }
@@ -584,7 +584,7 @@ export default function App() {
             <div className="border-b border-[var(--border-color)] pb-4">
               <div
                 className="flex items-center justify-between group cursor-pointer mb-2 ml-1"
-                onClick={() => { setActiveSettingsTab('gems'); setIsSettingsOpen(true); (window as any).ipcRenderer.send('set-view-visibility', false); }}
+                onClick={() => { setActiveSettingsTab('gems'); setIsSettingsOpen(true); window.ipcRenderer.send('set-view-visibility', false); }}
               >
                 <h2 className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Gems</h2>
                 <ChevronRight size={14} className="text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-colors opacity-50 group-hover:opacity-100" />
@@ -662,7 +662,7 @@ export default function App() {
                 <h2 className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Verlauf</h2>
                 {isSelectionMode && (
                   <div className="flex gap-2 mr-2">
-                    <button onClick={() => { setIsFolderPopupOpen('bulk'); (window as any).ipcRenderer.send('set-view-visibility', false); }} className="text-[var(--accent)] hover:text-blue-400 transition-colors" title="In Ordner verschieben"><Folder size={14} /></button>
+                    <button onClick={() => { setIsFolderPopupOpen('bulk'); window.ipcRenderer.send('set-view-visibility', false); }} className="text-[var(--accent)] hover:text-blue-400 transition-colors" title="In Ordner verschieben"><Folder size={14} /></button>
                     <button onClick={() => handleRemoveFromFolder(Array.from(selectedChats))} className="text-orange-400 hover:text-orange-300 transition-colors" title="Aus Ordner entfernen"><FolderMinus size={14} /></button>
                     <button onClick={handleBulkDelete} className="text-red-400 hover:text-red-300 transition-colors" title="Löschen"><Trash2 size={14} /></button>
                     <button onClick={() => { setIsSelectionMode(false); setSelectedChats(new Set()); }} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs ml-1">Abbrechen</button>
@@ -728,7 +728,7 @@ export default function App() {
         </div>
 
         <div className="p-3 border-t border-[var(--border-color)] shrink-0">
-          <button onClick={() => { setIsSettingsOpen(true); (window as any).ipcRenderer.send('set-view-visibility', false); }} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--bg-hover)] transition-colors text-sm text-[var(--text-primary)]">
+          <button onClick={() => { setIsSettingsOpen(true); window.ipcRenderer.send('set-view-visibility', false); }} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--bg-hover)] transition-colors text-sm text-[var(--text-primary)]">
             <Settings size={16} />
             <span>Einstellungen</span>
           </button>
@@ -792,7 +792,7 @@ export default function App() {
               <option value="Pro">Pro</option>
             </select>
 
-            <button onClick={() => (window as any).ipcRenderer.invoke('export-pdf')} title="Als PDF exportieren" className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+            <button onClick={() => window.ipcRenderer.invoke('export-pdf')} title="Als PDF exportieren" className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
               <Download size={16} />
             </button>
             <button title="Bildergalerie" className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
@@ -827,7 +827,7 @@ export default function App() {
                 <Settings className="text-[var(--accent)]" />
                 <h2 className="text-xl font-bold text-[var(--text-primary)]">GemiDesk Einstellungen</h2>
               </div>
-              <button onClick={() => { setIsSettingsOpen(false); (window as any).ipcRenderer.send('set-view-visibility', true); }} className="p-2 rounded-full hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+              <button onClick={() => { setIsSettingsOpen(false); window.ipcRenderer.send('set-view-visibility', true); }} className="p-2 rounded-full hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
                 <X size={24} />
               </button>
             </div>
@@ -913,7 +913,7 @@ export default function App() {
                           </div>
                           <select
                             value={tabBehavior}
-                            onChange={(e) => { setTabBehavior(e.target.value as any); (window as any).ipcRenderer.invoke('set-store', 'tabBehavior', e.target.value); }}
+                            onChange={(e) => { setTabBehavior(e.target.value as any); window.ipcRenderer.invoke('set-store', 'tabBehavior', e.target.value); }}
                             className="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-lg px-3 py-1.5 text-xs outline-none focus:border-[var(--accent)] text-[var(--text-primary)]"
                           >
                             <option value="new">In neuem Tab öffnen</option>
@@ -930,7 +930,7 @@ export default function App() {
                           </div>
                           <select
                             value={exportFormat}
-                            onChange={(e) => { setExportFormat(e.target.value as any); (window as any).ipcRenderer.invoke('set-store', 'exportFormat', e.target.value); }}
+                            onChange={(e) => { setExportFormat(e.target.value as any); window.ipcRenderer.invoke('set-store', 'exportFormat', e.target.value); }}
                             className="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-lg px-3 py-1.5 text-xs outline-none focus:border-[var(--accent)] text-[var(--text-primary)]"
                           >
                             <option value="pdf">PDF Dokument</option>
@@ -965,7 +965,7 @@ export default function App() {
                             onChange={(e) => {
                               const val = parseInt(e.target.value);
                               setChatsPerFolderLimit(val);
-                              (window as any).ipcRenderer.invoke('set-store', 'chatsPerFolderLimit', val);
+                              window.ipcRenderer.invoke('set-store', 'chatsPerFolderLimit', val);
                             }}
                             className="w-32 accent-[var(--accent)] cursor-pointer"
                           />
@@ -1039,7 +1039,7 @@ export default function App() {
                           {gems.map(gem => (
                             <button
                               key={gem.url}
-                              onClick={() => { handleChatClick(gem.url); setIsSettingsOpen(false); (window as any).ipcRenderer.send('set-view-visibility', true); }}
+                              onClick={() => { handleChatClick(gem.url); setIsSettingsOpen(false); window.ipcRenderer.send('set-view-visibility', true); }}
                               className="flex items-center gap-3 p-3 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)] hover:border-[var(--accent)] transition-all text-left"
                             >
                               {gem.iconUrl === '✨' ? <Sparkles size={16} className="text-[var(--accent)]" /> :
@@ -1073,7 +1073,7 @@ export default function App() {
                           <input
                             type="password"
                             value={enhancerApiKey}
-                            onChange={(e) => { setEnhancerApiKey(e.target.value); (window as any).ipcRenderer.invoke('set-store', 'enhancerApiKey', e.target.value); }}
+                            onChange={(e) => { setEnhancerApiKey(e.target.value); window.ipcRenderer.invoke('set-store', 'enhancerApiKey', e.target.value); }}
                             placeholder="API-Key hier einfügen..."
                             className="input-field"
                           />
@@ -1096,8 +1096,8 @@ export default function App() {
                           onClick={() => {
                             const newState = !isDevMode;
                             setIsDevMode(newState);
-                            (window as any).ipcRenderer.invoke('set-store', 'devMode', newState);
-                            (window as any).ipcRenderer.send('toggle-dev-mode', newState);
+                            window.ipcRenderer.invoke('set-store', 'devMode', newState);
+                            window.ipcRenderer.send('toggle-dev-mode', newState);
                           }}
                         >
                           <div className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ease-in-out transform ${isDevMode ? 'translate-x-6' : 'translate-x-0'}`} />
@@ -1121,7 +1121,7 @@ export default function App() {
                             </div>
                             <button onClick={() => {
                               if (confirm('Möchtest du wirklich alle lokalen App-Daten löschen? Deine Chats bei Gemini bleiben erhalten.')) {
-                                (window as any).ipcRenderer.invoke('clear-app-data');
+                                window.ipcRenderer.invoke('clear-app-data');
                               }
                             }} className="px-4 py-2 bg-orange-500/20 text-orange-400 rounded-lg text-sm hover:bg-orange-500/30 transition-colors">Zurücksetzen</button>
                           </div>
@@ -1136,7 +1136,7 @@ export default function App() {
                             </div>
                             <button onClick={() => {
                               if (confirm('Möchtest du dich komplett abmelden? App wird danach neu gestartet.')) {
-                                (window as any).ipcRenderer.invoke('logout');
+                                window.ipcRenderer.invoke('logout');
                               }
                             }} className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg text-sm hover:bg-red-500/30 transition-colors">Abmelden</button>
                           </div>
@@ -1153,7 +1153,7 @@ export default function App() {
 
       {/* Folder Selection Popup */}
       {isFolderPopupOpen && (
-        <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center p-4 animate-fade-in" onClick={() => { setIsFolderPopupOpen(null); (window as any).ipcRenderer.send('set-view-visibility', true); }}>
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center p-4 animate-fade-in" onClick={() => { setIsFolderPopupOpen(null); window.ipcRenderer.send('set-view-visibility', true); }}>
           <div className="bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-2xl shadow-2xl p-3 w-72 animate-slide-in" onClick={e => e.stopPropagation()}>
             <h3 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest px-3 py-3 border-b border-[var(--border-color)] mb-2">In Ordner verschieben</h3>
             <div className="space-y-1">
@@ -1218,21 +1218,21 @@ export default function App() {
           onMouseLeave={() => setIsHoveringMenu(false)}
         >
           <button onClick={() => { setIsSelectionMode(true); setContextMenuPos(null); }} className="w-full text-left px-4 py-2 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent)] flex items-center gap-3"><CheckSquare size={14} /> Auswählen</button>
-          <button onClick={() => { setIsFolderPopupOpen(contextMenuPos.url); setContextMenuPos(null); (window as any).ipcRenderer.send('set-view-visibility', false); }} className="w-full text-left px-4 py-2 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent)] flex items-center gap-3"><Folder size={14} /> In Ordner verschieben</button>
+          <button onClick={() => { setIsFolderPopupOpen(contextMenuPos.url); setContextMenuPos(null); window.ipcRenderer.send('set-view-visibility', false); }} className="w-full text-left px-4 py-2 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent)] flex items-center gap-3"><Folder size={14} /> In Ordner verschieben</button>
           {folderMap[contextMenuPos.url] && (
             <button onClick={() => { handleRemoveFromFolder([contextMenuPos.url]); setContextMenuPos(null); }} className="w-full text-left px-4 py-2 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:text-red-400 flex items-center gap-3"><FolderMinus size={14} /> Aus Ordner entfernen</button>
           )}
           {chats.find(c => c.url === contextMenuPos.url)?.isPinned ? (
             <button onClick={() => { 
               const url = contextMenuPos.url;
-              (window as any).ipcRenderer.send('toggle-pin-chat', url); 
+              window.ipcRenderer.send('toggle-pin-chat', url);
               setChats(prev => prev.map(c => c.url === url ? { ...c, isPinned: false } : c));
               setContextMenuPos(null); 
             }} className="w-full text-left px-4 py-2 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent)] flex items-center gap-3"><PinOff size={14} /> Loslösen</button>
           ) : (
             <button onClick={() => { 
               const url = contextMenuPos.url;
-              (window as any).ipcRenderer.send('toggle-pin-chat', url); 
+              window.ipcRenderer.send('toggle-pin-chat', url);
               setChats(prev => prev.map(c => c.url === url ? { ...c, isPinned: true } : c));
               setContextMenuPos(null); 
             }} className="w-full text-left px-4 py-2 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent)] flex items-center gap-3"><Pin size={14} /> Anpinnen</button>
