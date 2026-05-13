@@ -413,6 +413,8 @@ const MODEL_SELECTORS: Record<string, string> = {
 };
 const MODEL_HIERARCHY_BASE = ["pro", "thinking", "fast"];
 
+const MENU_EVALUATION_DELAY_MS = 150;
+
 function getModelFromText(text: string) {
   text = text.trim().toLowerCase();
   if (text.includes("pro") || text.includes("advanced")) return "pro";
@@ -499,7 +501,7 @@ function selectPreferredModel() {
         }, 50);
         return;
       }
-    }, 150);
+    }, MENU_EVALUATION_DELAY_MS);
     return;
   }
 
