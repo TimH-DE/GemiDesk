@@ -465,13 +465,18 @@ function selectPreferredModel() {
     (window as any)._gemideskSwitcherEvaluatingMenu = true;
     setTimeout(() => {
       (window as any)._gemideskSwitcherEvaluatingMenu = false;
-      if (!document.querySelector("[role='menuitemradio'], [role='menuitem']")) return;
+      const allOptions = document.querySelectorAll("[role='menuitemradio'], [role='menuitem']");
+      if (allOptions.length === 0) return;
 
       for (const modelKey of MODEL_HIERARCHY) {
         let option = document.querySelector(MODEL_SELECTORS[modelKey]);
         if (!option) {
-          option = Array.from(document.querySelectorAll("[role='menuitemradio'], [role='menuitem']"))
-            .find(el => (el as HTMLElement).innerText.toLowerCase().includes(modelKey)) || null;
+          for (const el of allOptions) {
+            if ((el as HTMLElement).innerText.toLowerCase().includes(modelKey)) {
+              option = el;
+              break;
+            }
+          }
         }
         if (!option) continue;
 
