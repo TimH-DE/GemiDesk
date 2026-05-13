@@ -603,7 +603,7 @@ function getGemIdFromContext(): string | null {
   return null;
 }
 
-const extractChatId = (url: string) => {
+export const extractChatId = (url: string) => {
   if (!url) return null;
   const match = url.match(/\/([a-zA-Z0-9_-]+)(?:\?.*)?$/);
   return match ? match[1] : null;
