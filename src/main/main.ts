@@ -2,10 +2,17 @@ import { app, BrowserWindow, BrowserView, ipcMain, dialog, session, shell } from
 import path from 'node:path';
 import Store from 'electron-store';
 
+export interface ChatHistoryItem {
+  title: string;
+  url: string;
+  isPinned?: boolean;
+  isGem?: boolean;
+}
+
 const store = new Store();
 
 const cleanupChatHistory = () => {
-  const currentHistory = (store.get('chatHistory') || []) as any[];
+  const currentHistory = (store.get('chatHistory') || []) as ChatHistoryItem[];
   const folderMap = (store.get('folderMap') || {}) as Record<string, string>;
   const keptChats = currentHistory.filter(c => c.isPinned || folderMap[c.url]);
   store.set('chatHistory', keptChats);
@@ -265,7 +272,7 @@ const updateChatTitle = (url: string, title: string) => {
   const chatId = getChatId(url);
   if (!chatId || chatId === 'app' || chatId.includes('gemini.google.com')) return;
 
-  const history = (store.get('chatHistory') || []) as any[];
+  const history = (store.get('chatHistory') || []) as ChatHistoryItem[];
   const idx = history.findIndex(c => getChatId(c.url) === chatId);
   
   if (idx !== -1) {
@@ -288,19 +295,19 @@ ipcMain.on('chat-title-changed', (event, title) => {
   }
 });
 
-ipcMain.on('chat-history', (_event, newChats, isGlobalSidebar = true, bumpActiveChatId = null) => {
+ipcMain.on('chat-history', (_event, newChats: ChatHistoryItem[], isGlobalSidebar = true, bumpActiveChatId = null) => {
   if (win) {
-    const storedChats = (store.get('chatHistory') || []) as any[];
-    let merged: any[] = [];
+    const storedChats = (store.get('chatHistory') || []) as ChatHistoryItem[];
+    let merged: ChatHistoryItem[] = [];
     
     if (isGlobalSidebar) {
-      const chatMap = new Map<string, any>();
+      const chatMap = new Map<string, ChatHistoryItem>();
       
-      newChats.forEach((chat: any) => {
+      newChats.forEach((chat: ChatHistoryItem) => {
         chatMap.set(getChatId(chat.url), chat);
       });
       
-      storedChats.forEach((chat: any) => {
+      storedChats.forEach((chat: ChatHistoryItem) => {
         const id = getChatId(chat.url);
         if (!chatMap.has(id)) {
           chatMap.set(id, chat);
@@ -310,10 +317,10 @@ ipcMain.on('chat-history', (_event, newChats, isGlobalSidebar = true, bumpActive
       merged = Array.from(chatMap.values());
     } else {
       const storedIds = new Set(storedChats.map(c => getChatId(c.url)));
-      const trulyNewChats = newChats.filter((c: any) => !storedIds.has(getChatId(c.url)));
+      const trulyNewChats = newChats.filter((c: ChatHistoryItem) => !storedIds.has(getChatId(c.url)));
       
-      const newChatMap = new Map<string, any>();
-      newChats.forEach((c: any) => newChatMap.set(getChatId(c.url), c));
+      const newChatMap = new Map<string, ChatHistoryItem>();
+      newChats.forEach((c: ChatHistoryItem) => newChatMap.set(getChatId(c.url), c));
       
       const updatedStoredChats = storedChats.map(c => {
         const id = getChatId(c.url);
