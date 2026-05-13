@@ -42,6 +42,7 @@
             
             makeWrapper ${pkgs.electron}/bin/electron $out/bin/gemidesk \
               --add-flags $out/lib/node_modules/gemidesk/dist-electron/main/main.js \
+              --add-flags "--class=GemiDesk" \
               --set ELECTRON_FORCE_IS_PACKAGED 1
           '';
 
