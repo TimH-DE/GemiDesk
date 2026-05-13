@@ -181,6 +181,24 @@ ipcMain.handle('close-tab', (_event, id: string) => {
 
 ipcMain.handle('load-url', (_event, url: string) => {
   if (!activeTabId) return false;
+
+  try {
+    const parsedUrl = new URL(url, 'https://gemini.google.com');
+
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      return false;
+    }
+
+    const isTrusted = (VITE_DEV_SERVER_URL && url.startsWith(VITE_DEV_SERVER_URL)) ||
+                      parsedUrl.hostname === 'google.com' ||
+                      parsedUrl.hostname.endsWith('.google.com');
+    if (!isTrusted) {
+      return false;
+    }
+  } catch (e) {
+    return false;
+  }
+
   const view = tabs.get(activeTabId);
   if (view) {
     view.webContents.send('spa-navigate', url);
