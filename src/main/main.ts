@@ -25,6 +25,8 @@ const mobileUserAgent = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (
 
 app.commandLine.appendSwitch('user-agent', userAgent);
 app.setName('GemiDesk');
+app.setDesktopName('gemidesk.desktop');
+app.commandLine.appendSwitch('class', 'GemiDesk');
 app.userAgentFallback = userAgent;
 app.commandLine.appendSwitch('disable-infobars');
 app.setAppUserModelId('com.timh.gemidesk');
