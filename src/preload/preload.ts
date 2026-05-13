@@ -132,8 +132,12 @@ window.addEventListener('DOMContentLoaded', () => {
     };
     observeInput();
 
+    let titleDebounceTimer: NodeJS.Timeout;
     const titleObserver = new MutationObserver(() => {
-      ipcRenderer.send('chat-title-changed', document.title);
+      clearTimeout(titleDebounceTimer);
+      titleDebounceTimer = setTimeout(() => {
+        ipcRenderer.send('chat-title-changed', document.title);
+      }, 500);
     });
     const titleEl = document.querySelector('title');
     if (titleEl) {

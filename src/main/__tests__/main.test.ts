@@ -4,6 +4,8 @@ vi.mock('electron', () => ({
   app: {
     commandLine: { appendSwitch: vi.fn() },
     setName: vi.fn(),
+    setDesktopName: vi.fn(),
+    setAppUserModelId: vi.fn(),
     userAgentFallback: '',
     getPath: vi.fn().mockReturnValue(''),
     on: vi.fn(),
@@ -14,8 +16,12 @@ vi.mock('electron', () => ({
   },
   BrowserWindow: class MockBrowserWindow {
     static getAllWindows = vi.fn().mockReturnValue([]);
+    contentView = {
+      addChildView: vi.fn(),
+      removeChildView: vi.fn()
+    };
   },
-  BrowserView: class MockBrowserView {},
+  WebContentsView: class MockWebContentsView {},
   ipcMain: {
     handle: vi.fn(),
     on: vi.fn(),

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, BrowserView, ipcMain, dialog, session, shell } from 'electron';
+import { app, BrowserWindow, WebContentsView, ipcMain, dialog, session, shell } from 'electron';
 import path from 'node:path';
 import Store from 'electron-store';
 
@@ -30,13 +30,23 @@ app.setDesktopName('gemidesk.desktop');
 app.commandLine.appendSwitch('class', 'GemiDesk');
 app.userAgentFallback = userAgent;
 app.commandLine.appendSwitch('disable-infobars');
+
+// Maximale GPU-Performance und Rasterisierung erzwingen
+app.commandLine.appendSwitch('ignore-gpu-blocklist');
+app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-zero-copy');
+
+// Zwingend erforderlich für flüssiges Rendering unter Wayland
+app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
+app.commandLine.appendSwitch('enable-features', 'WaylandWindowDecorations,WaylandFractionalScaleV1');
+
 app.setAppUserModelId('com.timh.gemidesk');
 
 process.env.DIST = path.join(__dirname, '../../dist');
 process.env.VITE_PUBLIC = app.isPackaged ? process.env.DIST : path.join(process.env.DIST, '../public');
 
 let win: BrowserWindow | null;
-const tabs = new Map<string, BrowserView>();
+const tabs = new Map<string, WebContentsView>();
 let activeTabId: string | null = null;
 let currentSidebarWidth = 256;
 
@@ -103,7 +113,7 @@ ipcMain.on('toggle-sidebar', (_event, isOpen) => {
 });
 
 ipcMain.handle('new-tab', (_event, id: string, url: string = 'https://gemini.google.com/app') => {
-  const view = new BrowserView({
+  const view = new WebContentsView({
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),
       nodeIntegration: false,
@@ -123,7 +133,6 @@ ipcMain.handle('new-tab', (_event, id: string, url: string = 'https://gemini.goo
     }
   });
   
-  view.setAutoResize({ width: true, height: true, horizontal: false, vertical: false });
   view.webContents.setUserAgent(userAgent);
   tabs.set(id, view);
   view.webContents.loadURL(url);
@@ -158,13 +167,15 @@ ipcMain.handle('switch-tab', (_event, id: string) => {
   
   if (activeTabId && tabs.has(activeTabId)) {
     const oldView = tabs.get(activeTabId)!;
-    win.removeBrowserView(oldView);
+    win.contentView.removeChildView(oldView);
+    oldView.webContents.setBackgroundThrottling(true); // <-- Drosselung aktivieren
     oldView.webContents.send('set-active', false);
   }
   
   activeTabId = id;
   const view = tabs.get(id)!;
-  win.addBrowserView(view);
+  view.webContents.setBackgroundThrottling(false); // <-- Volle Leistung für aktiven Tab
+  win.contentView.addChildView(view);
   view.webContents.send('set-active', true, store.get('chatHistory') || []);
   
   if (store.get('devMode')) {
@@ -180,7 +191,7 @@ ipcMain.handle('close-tab', (_event, id: string) => {
   if (tabs.has(id)) {
     const view = tabs.get(id)!;
     if (activeTabId === id) {
-      win.removeBrowserView(view);
+      win.contentView.removeChildView(view);
       activeTabId = null;
     }
     // @ts-ignore
@@ -400,9 +411,9 @@ ipcMain.on('set-view-visibility', (_event, isVisible) => {
   if (!view) return;
   
   if (isVisible) {
-    win.addBrowserView(view);
+    win.contentView.addChildView(view);
   } else {
-    win.removeBrowserView(view);
+    win.contentView.removeChildView(view);
   }
 });
 
@@ -436,7 +447,7 @@ function createWindow() {
     win.webContents.openDevTools({ mode: 'detach' });
   }
 
-  const scraperView = new BrowserView({
+  const scraperView = new WebContentsView({
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),
       nodeIntegration: false,
