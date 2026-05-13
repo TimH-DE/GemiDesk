@@ -20,11 +20,12 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@types/node": "^18.19.0",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.19",
-    "electron": "^29.1.0",
+    "electron": "^42.0.1",
     "electron-builder": "^24.13.3",
     "jsdom": "^29.1.1",
     "postcss": "^8.4.38",
