@@ -459,13 +459,21 @@ app.on('activate', () => {
 });
 
 app.whenReady().then(() => {
+  const ALLOWED_GOOGLE_HOSTS = new Set([
+    'google.com',
+    'gemini.google.com',
+    'notebooklm.google.com',
+    'one.google.com',
+    'support.google.com',
+    'accounts.google.com'
+  ]);
+
   app.on('web-contents-created', (_, contents) => {
     contents.on('will-navigate', (event, navigationUrl) => {
       const parsedUrl = new URL(navigationUrl);
       const isTrusted = parsedUrl.protocol === 'file:' ||
                         (VITE_DEV_SERVER_URL && navigationUrl.startsWith(VITE_DEV_SERVER_URL)) ||
-                        parsedUrl.hostname === 'google.com' ||
-                        parsedUrl.hostname.endsWith('.google.com');
+                        ALLOWED_GOOGLE_HOSTS.has(parsedUrl.hostname);
 
       if (!isTrusted) {
         event.preventDefault();
@@ -477,8 +485,7 @@ app.whenReady().then(() => {
       const parsedUrl = new URL(url);
       const isTrusted = parsedUrl.protocol === 'file:' ||
                         (VITE_DEV_SERVER_URL && url.startsWith(VITE_DEV_SERVER_URL)) ||
-                        parsedUrl.hostname === 'google.com' ||
-                        parsedUrl.hostname.endsWith('.google.com');
+                        ALLOWED_GOOGLE_HOSTS.has(parsedUrl.hostname);
 
       if (!isTrusted) {
         shell.openExternal(url);
