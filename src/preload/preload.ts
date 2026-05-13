@@ -899,11 +899,21 @@ ipcRenderer.on('spa-navigate', async (_event, url) => {
     if (findAndClickLink()) return;
 
     if (targetUrl !== location.href) {
-      window.location.href = targetUrl;
+      const parsedTargetUrl = new URL(targetUrl, location.href);
+      if (['http:', 'https:'].includes(parsedTargetUrl.protocol) && (parsedTargetUrl.hostname === 'google.com' || parsedTargetUrl.hostname.endsWith('.google.com'))) {
+        window.location.href = targetUrl;
+      }
     }
 
   } catch (e) {
-    window.location.href = url;
+    try {
+      const parsedUrl = new URL(url, location.href);
+      if (['http:', 'https:'].includes(parsedUrl.protocol) && (parsedUrl.hostname === 'google.com' || parsedUrl.hostname.endsWith('.google.com'))) {
+        window.location.href = url;
+      }
+    } catch (e2) {
+      // Ignore invalid URL
+    }
   }
 });
 
