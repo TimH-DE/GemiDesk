@@ -20,6 +20,7 @@
           npmDepsHash = "sha256-nryQi6rIBlSXKDQ+PLxgceRr+HzzlnndLXoK/hIyslw=";
           
           npmBuildScript = "build-nix";
+          npmFlags = [ "--legacy-peer-deps" ];
           
           nativeBuildInputs = with pkgs; [
             copyDesktopItems
