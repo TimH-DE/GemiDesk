@@ -944,12 +944,45 @@ async function deleteChatByUrl(url: string) {
   if (!link) {
     const sidebar = document.querySelector('app-chat-history, .recent-chat-list, .mdc-drawer__content, mat-sidenav, .cdk-virtual-scroll-viewport');
     if (sidebar) {
-      for (let i = 0; i < 15; i++) {
+      link = await new Promise<Element | null>((resolve) => {
+        let attempts = 0;
+        let observer: MutationObserver;
+        let interval: ReturnType<typeof setInterval>;
+
+        const cleanup = () => {
+          if (observer) observer.disconnect();
+          if (interval) clearInterval(interval);
+        };
+
+        const check = () => {
+          const l = document.querySelector(`a[href="${url}"]`);
+          if (l) {
+            cleanup();
+            resolve(l);
+            return true;
+          }
+          return false;
+        };
+
+        observer = new MutationObserver(() => {
+          check();
+        });
+        observer.observe(sidebar, { childList: true, subtree: true });
+
+        interval = setInterval(() => {
+          if (check()) return;
+          if (attempts >= 15) {
+            cleanup();
+            resolve(null);
+            return;
+          }
+          sidebar.scrollTop += 800;
+          attempts++;
+        }, 400);
+
         sidebar.scrollTop += 800;
-        await new Promise(r => setTimeout(r, 400));
-        link = document.querySelector(`a[href="${url}"]`);
-        if (link) break;
-      }
+        attempts++;
+      });
     }
   }
 
