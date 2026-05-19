@@ -51,8 +51,10 @@ window.addEventListener('DOMContentLoaded', () => {
       selectPreferredModel();
     });
 
+    let autoSelectorTimeout: ReturnType<typeof setTimeout> | null = null;
     const autoSelectorObserver = new MutationObserver(() => {
-      selectPreferredModel();
+      if (autoSelectorTimeout) clearTimeout(autoSelectorTimeout);
+      autoSelectorTimeout = setTimeout(() => selectPreferredModel(), 200);
     });
     autoSelectorObserver.observe(document.body, { childList: true, subtree: true });
 
@@ -165,11 +167,15 @@ window.addEventListener('DOMContentLoaded', () => {
     setInterval(scrapeGems, 30000);
 
     let lastUrl = '';
+    let activeGemTimeout: ReturnType<typeof setTimeout> | null = null;
     const activeGemObserver = new MutationObserver(() => {
-      if (location.href !== lastUrl) {
-        lastUrl = location.href;
-        detectActiveGemIcon();
-      }
+      if (activeGemTimeout) clearTimeout(activeGemTimeout);
+      activeGemTimeout = setTimeout(() => {
+        if (location.href !== lastUrl) {
+          lastUrl = location.href;
+          detectActiveGemIcon();
+        }
+      }, 200);
     });
     activeGemObserver.observe(document.body, { childList: true, subtree: true });
     setInterval(detectActiveGemIcon, 10000);
@@ -349,21 +355,25 @@ function injectGemiDeskStyles() {
 }
 
 function initWordCounter() {
+  let wordCounterTimeout: ReturnType<typeof setTimeout> | null = null;
   const observer = new MutationObserver(() => {
-    const inputArea = document.querySelector('rich-textarea div[contenteditable="true"]');
-    if (inputArea && !document.getElementById('gemidesk-word-counter')) {
-      const counter = document.createElement('div');
-      counter.id = 'gemidesk-word-counter';
-      counter.innerText = '0 words | 0 chars';
-      inputArea.parentElement?.parentElement?.appendChild(counter);
+    if (wordCounterTimeout) clearTimeout(wordCounterTimeout);
+    wordCounterTimeout = setTimeout(() => {
+      const inputArea = document.querySelector('rich-textarea div[contenteditable="true"]');
+      if (inputArea && !document.getElementById('gemidesk-word-counter')) {
+        const counter = document.createElement('div');
+        counter.id = 'gemidesk-word-counter';
+        counter.innerText = '0 words | 0 chars';
+        inputArea.parentElement?.parentElement?.appendChild(counter);
 
-      inputArea.addEventListener('input', () => {
-        const text = (inputArea as HTMLElement).innerText || '';
-        const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
-        const chars = text.length;
-        counter.innerText = `${words} words | ${chars} chars`;
-      });
-    }
+        inputArea.addEventListener('input', () => {
+          const text = (inputArea as HTMLElement).innerText || '';
+          const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
+          const chars = text.length;
+          counter.innerText = `${words} words | ${chars} chars`;
+        });
+      }
+    }, 200);
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
