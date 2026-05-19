@@ -117,15 +117,19 @@ window.addEventListener('DOMContentLoaded', () => {
     const observeInput = () => {
       const inputArea = document.querySelector('rich-textarea div[contenteditable="true"]');
       if (inputArea) {
+        let inputDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
         const inputObserver = new MutationObserver(() => {
-          if ((inputArea as HTMLElement).innerText.trim() === '') {
-            if (scrapeTimeout) clearTimeout(scrapeTimeout);
-            scrapeTimeout = setTimeout(() => {
-              const activeChatId = extractChatId(location.href);
-              (window as any).bumpChatId = activeChatId;
-              scrapeChatHistory(true);
-            }, 2500);
-          }
+          if (inputDebounceTimeout) clearTimeout(inputDebounceTimeout);
+          inputDebounceTimeout = setTimeout(() => {
+            if ((inputArea as HTMLElement).innerText.trim() === '') {
+              if (scrapeTimeout) clearTimeout(scrapeTimeout);
+              scrapeTimeout = setTimeout(() => {
+                const activeChatId = extractChatId(location.href);
+                (window as any).bumpChatId = activeChatId;
+                scrapeChatHistory(true);
+              }, 2500);
+            }
+          }, 300);
         });
         inputObserver.observe(inputArea, { childList: true, characterData: true, subtree: true });
       } else {
@@ -185,11 +189,15 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 
     ipcRenderer.on('toggle-pin-chat', (_event, url) => {
-      const links = Array.from(document.querySelectorAll('a[href*="/app/"]'));
-      const link = links.find(l => {
+      const links = document.querySelectorAll('a[href*="/app/"]');
+      let link: Element | undefined;
+      for (const l of links) {
         const href = l.getAttribute('href') || '';
-        return href.endsWith(url) || url.endsWith(href);
-      });
+        if (href.endsWith(url) || url.endsWith(href)) {
+          link = l;
+          break;
+        }
+      }
 
       if (link) {
         let parent = link.parentElement;
@@ -204,23 +212,31 @@ window.addEventListener('DOMContentLoaded', () => {
           menuBtn.click();
           setTimeout(() => {
             const overlay = document.querySelector('.cdk-overlay-container') || document.body;
-            const menuItems = Array.from(overlay.querySelectorAll('[role="menuitem"], button, a, span'));
-            const pinBtn = menuItems.find(item => {
-              if (item === menuBtn) return false;
+            const menuItems = overlay.querySelectorAll('[role="menuitem"], button, a, span');
+            let pinBtn: Element | undefined;
+            for (const item of menuItems) {
+              if (item === menuBtn) continue;
               const text = (item.textContent || '').toLowerCase();
               const ariaLabel = (item.getAttribute('aria-label') || '').toLowerCase();
-              return text.includes('anpinnen') || text.includes('pin') || text.includes('loslösen') || text.includes('unpin') ||
-                ariaLabel.includes('anpinnen') || ariaLabel.includes('pin') || ariaLabel.includes('loslösen') || ariaLabel.includes('unpin');
-            });
+              if (text.includes('anpinnen') || text.includes('pin') || text.includes('loslösen') || text.includes('unpin') ||
+                ariaLabel.includes('anpinnen') || ariaLabel.includes('pin') || ariaLabel.includes('loslösen') || ariaLabel.includes('unpin')) {
+                pinBtn = item;
+                break;
+              }
+            }
 
             if (pinBtn) {
               (pinBtn as HTMLElement).click();
             } else {
-              const allElements = Array.from(overlay.querySelectorAll('span, div'));
-              const fallbackBtn = allElements.find(item => {
+              const allElements = overlay.querySelectorAll('span, div');
+              let fallbackBtn: Element | undefined;
+              for (const item of allElements) {
                 const text = (item.textContent || '').toLowerCase();
-                return text.includes('anpinnen') || text.includes('pin') || text.includes('loslösen') || text.includes('unpin');
-              });
+                if (text.includes('anpinnen') || text.includes('pin') || text.includes('loslösen') || text.includes('unpin')) {
+                  fallbackBtn = item;
+                  break;
+                }
+              }
               if (fallbackBtn) {
                 (fallbackBtn as HTMLElement).click();
               }
@@ -381,15 +397,21 @@ function initWordCounter() {
 
 function autoAcceptCookies() {
   const clickAccept = () => {
-    const buttons = Array.from(document.querySelectorAll('button, span, div[role="button"]'));
-    const acceptBtn = buttons.find(b => {
+    const buttons = document.querySelectorAll('button, span, div[role="button"]');
+    let acceptBtn: Element | undefined;
+    for (const b of buttons) {
       const text = (b.textContent || '').toLowerCase();
-      return text === 'alle akzeptieren' ||
+      if (
+        text === 'alle akzeptieren' ||
         text === 'accept all' ||
         text === 'ich stimme zu' ||
         text === 'i agree' ||
-        text === 'alle annehmen';
-    });
+        text === 'alle annehmen'
+      ) {
+        acceptBtn = b;
+        break;
+      }
+    }
 
     if (acceptBtn) {
       (acceptBtn as HTMLElement).click();
@@ -399,10 +421,14 @@ function autoAcceptCookies() {
   };
 
   if (!clickAccept()) {
+    let acceptTimeout: ReturnType<typeof setTimeout> | null = null;
     const observer = new MutationObserver((_mutations, obs) => {
-      if (clickAccept()) {
-        obs.disconnect();
-      }
+      if (acceptTimeout) clearTimeout(acceptTimeout);
+      acceptTimeout = setTimeout(() => {
+        if (clickAccept()) {
+          obs.disconnect();
+        }
+      }, 500);
     });
     observer.observe(document.body, { childList: true, subtree: true });
 
@@ -453,7 +479,7 @@ function setExtensionClick(ms = 800) {
 }
 
 function selectPreferredModel() {
-  for (const banner of Array.from(document.querySelectorAll(".disclaimer-container, .promo"))) {
+  for (const banner of document.querySelectorAll(".disclaimer-container, .promo")) {
     const text = (banner as HTMLElement).innerText.toLowerCase();
     if (text.includes("limit resets on") || text.includes("responses will use other models") || text.includes("reached your")) {
       knownRateLimitedModels.add("pro");
@@ -581,10 +607,16 @@ let isFixingGemError = false;
 function detectAndFixGemError() {
   if (isFixingGemError) return;
 
-  const bodyText = document.body.textContent || '';
-  const isGemError = bodyText.includes('mit einem Gem erstellt, das gelöscht wurde') ||
-    bodyText.includes('created with a Gem that was deleted') ||
-    document.querySelector('.error-container')?.textContent?.includes('Gem');
+  const errorContainerText = document.querySelector('.error-container')?.textContent || '';
+  const dialogText = document.querySelector('mat-dialog-container, [role="dialog"]')?.textContent || '';
+
+  const isGemError = errorContainerText.includes('Gem') ||
+    dialogText.includes('mit einem Gem erstellt, das gelöscht wurde') ||
+    dialogText.includes('created with a Gem that was deleted') ||
+    errorContainerText.includes('mit einem Gem erstellt, das gelöscht wurde') ||
+    errorContainerText.includes('created with a Gem that was deleted') ||
+    document.querySelector('main')?.textContent?.includes('mit einem Gem erstellt, das gelöscht wurde') ||
+    document.querySelector('main')?.textContent?.includes('created with a Gem that was deleted');
 
   if (!isGemError) return;
 
@@ -669,11 +701,11 @@ function scrapeChatHistory(forceSend = false) {
   if (!isActiveTab && !forceSend) return;
 
   const currentGemId = getGemIdFromContext();
-  const chatLinks = Array.from(document.querySelectorAll('a[href*="/app/"], a.conversation, a[href*="/gem/"]'));
+  const chatLinks = document.querySelectorAll('a[href*="/app/"], a.conversation, a[href*="/gem/"]');
   const scrapedByChatId = new Map<string, { title: string, url: string, isPinned: boolean, isGem?: boolean }>();
   let cachedHtml = '';
 
-  chatLinks.forEach(link => {
+  for (const link of chatLinks) {
     const ariaLabel = link.getAttribute('aria-label') || '';
     const textContent = link.textContent || '';
 
@@ -727,7 +759,7 @@ function scrapeChatHistory(forceSend = false) {
     if (!existing || (!existing.isPinned && isPinned)) {
       scrapedByChatId.set(chatId, { title, url: finalUrl, isPinned, isGem });
     }
-  });
+  }
 
   const finalScraped: any[] = [];
   const processedIds = new Set<string>();
@@ -788,31 +820,40 @@ function scrapeGems() {
   const elements: HTMLElement[] = [];
 
   if (isGemManager) {
-    const myGemsHeader = Array.from(document.querySelectorAll('h1, h2, h3, .section-title, span, div')).find(el => {
+    let myGemsHeader: Element | undefined;
+    for (const el of document.querySelectorAll('h1, h2, h3, .section-title, span, div')) {
       const txt = el.textContent?.trim();
-      return txt === 'Meine Gems' || txt === 'My Gems' || txt === 'Your Gems';
-    });
+      if (txt === 'Meine Gems' || txt === 'My Gems' || txt === 'Your Gems') {
+        myGemsHeader = el;
+        break;
+      }
+    }
 
     if (myGemsHeader) {
       const section = myGemsHeader.closest('section, .section, div[role="list"]') ||
         myGemsHeader.parentElement?.nextElementSibling ||
         myGemsHeader.parentElement;
       if (section) {
-        elements.push(...Array.from(section.querySelectorAll('a[href*="/gem/"]')) as HTMLElement[]);
+        for (const el of section.querySelectorAll('a[href*="/gem/"]')) {
+          elements.push(el as HTMLElement);
+        }
       }
     }
 
     if (elements.length === 0) {
       const defaults = ['Storybook', 'Coding-Assistent', 'Coding Assistant', 'Kreativer Partner', 'Creative Partner', 'Karriereberater', 'Career advisor', 'Lernhilfe', 'Learning help', 'Productivity planner', 'Schreibassistent', 'Writing editor'];
-      const allGemLinks = Array.from(document.querySelectorAll('a[href*="/gem/"]')) as HTMLElement[];
-      const filtered = allGemLinks.filter(link => {
+      const allGemLinks = document.querySelectorAll('a[href*="/gem/"]');
+      for (const link of allGemLinks) {
         const txt = link.textContent?.trim() || '';
-        return !defaults.some(d => txt.includes(d));
-      });
-      elements.push(...filtered);
+        if (!defaults.some(d => txt.includes(d))) {
+          elements.push(link as HTMLElement);
+        }
+      }
     }
   } else {
-    elements.push(...Array.from(document.querySelectorAll('a[href*="/gem/"], button.bot-new-conversation-button, a[href*="/app/gem/"]')) as HTMLElement[]);
+    for (const el of document.querySelectorAll('a[href*="/gem/"], button.bot-new-conversation-button, a[href*="/app/gem/"]')) {
+      elements.push(el as HTMLElement);
+    }
   }
 
   const gems = elements.map(el => {
