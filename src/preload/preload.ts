@@ -100,7 +100,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const observeChats = () => {
       const chatListContainer = document.querySelector(
-        '.sidenav-with-history-container, .overflow-container, .chat-history-list, conversations-list, infinite-scroller'
+        '.sidenav-with-history-container, .overflow-container, .chat-history-list, conversations-list, infinite-scroller, mat-nav-list, gem-nav-list-item'
       );
       if (chatListContainer) {
         chatObserver.observe(chatListContainer, { childList: true, subtree: true });
@@ -189,7 +189,7 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 
     ipcRenderer.on('toggle-pin-chat', (_event, url) => {
-      const links = document.querySelectorAll('a[href*="/app/"]');
+      const links = document.querySelectorAll('a[href*="/app/"], gem-nav-list-item a, a.mat-mdc-list-item');
       let link: Element | undefined;
       for (const l of links) {
         const href = l.getAttribute('href') || '';
@@ -315,7 +315,10 @@ function injectGemiDeskStyles() {
     .my-stuff-side-nav,
     mat-drawer,
     mat-sidenav,
-    .mat-drawer-inner-container {
+    .mat-drawer-inner-container,
+    side-navigation-v2,
+    side-navigation-content,
+    bard-sidenav-container {
       position: fixed !important;
       left: -5000px !important;
       top: 0 !important;
@@ -445,7 +448,7 @@ let extensionActionTimeout: NodeJS.Timeout | null = null;
 let knownRateLimitedModels = new Set<string>();
 
 const TRIGGER_SELECTOR = ".input-area-switch";
-const TRIGGER_LABEL_SELECTOR = ".logo-pill-label-container span";
+const TRIGGER_LABEL_SELECTOR = ".logo-pill-label-container span, .picker-primary-text, .aureus-picker-extended-text";
 const MODEL_SELECTORS: Record<string, string> = {
   "pro": "[data-test-id='bard-mode-option-pro']",
   "thinking": "[data-test-id='bard-mode-option-thinking']",
@@ -701,7 +704,7 @@ function scrapeChatHistory(forceSend = false) {
   if (!isActiveTab && !forceSend) return;
 
   const currentGemId = getGemIdFromContext();
-  const chatLinks = document.querySelectorAll('a[href*="/app/"], a.conversation, a[href*="/gem/"]');
+  const chatLinks = document.querySelectorAll('a[href*="/app/"], a.conversation, a[href*="/gem/"], gem-nav-list-item a, a.mat-mdc-list-item');
   const scrapedByChatId = new Map<string, { title: string, url: string, isPinned: boolean, isGem?: boolean }>();
   let cachedHtml = '';
 
@@ -712,12 +715,12 @@ function scrapeChatHistory(forceSend = false) {
     const isPinned = !!link.closest('.pinned-conversation') ||
       !!link.closest('conversations-list[type="pinned"]') ||
       !!link.closest('.pinned-conversations') ||
-      !!link.querySelector('mat-icon[svgicon*="pin"]') ||
+      (!!link.querySelector('mat-icon[svgicon*="pin"]') || !!link.querySelector('mat-icon[fonticon*="push_pin"]') || !!link.querySelector('mat-icon[data-mat-icon-name*="pin"]')) ||
       ariaLabel.toLowerCase().includes('angepinnter chat') ||
       ariaLabel.toLowerCase().includes('pinned chat') ||
       textContent.toLowerCase().includes('angepinnter chat');
 
-    let title = (link.querySelector('.conversation-title, .text-content, span')?.textContent || textContent || '').trim();
+    let title = (link.querySelector('.conversation-title, .text-content, .title-text, .gds-body-s, span')?.textContent || textContent || '').trim();
     if (isPinned) {
       title = title.replace(/Angepinnter Chat:|Pinned chat:|Angepinnt:|Pinned:|Angepinnt|Pinned/ig, '').trim();
     }
@@ -1029,7 +1032,7 @@ async function deleteChatByUrl(url: string) {
 
   if (!link) return;
 
-  const wrapper = link.closest('.recent-chat-item') || link.parentElement?.parentElement;
+  const wrapper = link.closest('gem-nav-list-item, .recent-chat-item, li') || link.parentElement?.parentElement;
   if (!wrapper) return;
 
   const menuBtn = wrapper.querySelector('button[aria-haspopup="menu"], button');
@@ -1063,7 +1066,7 @@ async function lazyLoadChats() {
   isLazyLoading = true;
 
   const sidenavContainer = document.querySelector('.sidenav-with-history-container, .my-stuff-side-nav, mat-drawer, mat-sidenav');
-  const infiniteScroller = document.querySelector('infinite-scroller[scrollable="true"], infinite-scroller, .cdk-virtual-scroll-viewport, .overflow-container, mat-drawer-content, app-chat-history, .recent-chat-list');
+  const infiniteScroller = document.querySelector('infinite-scroller[scrollable="true"], infinite-scroller, .cdk-virtual-scroll-viewport, .overflow-container, mat-drawer-content, app-chat-history, .recent-chat-list, .chat-history-scroll-container, .modular-zero-state-container');
 
   if (!infiniteScroller) {
     isLazyLoading = false;
