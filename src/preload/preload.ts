@@ -318,6 +318,13 @@ function injectGemiDeskStyles() {
     .mat-drawer-inner-container,
     side-navigation-v2,
     side-navigation-content,
+    .side-navigation-content,
+    .side-nav-sparkle-button,
+    .side-nav-menu-button,
+    sidenav-mavatar-footer,
+    .sidenav-mavatar-footer,
+    [data-test-id="side-nav-sparkle-button"],
+    [data-test-id="side-nav-toggle"],
     bard-sidenav-container {
       position: fixed !important;
       left: -5000px !important;
@@ -704,7 +711,7 @@ function scrapeChatHistory(forceSend = false) {
   if (!isActiveTab && !forceSend) return;
 
   const currentGemId = getGemIdFromContext();
-  const chatLinks = document.querySelectorAll('a[href*="/app/"], a.conversation, a[href*="/gem/"], gem-nav-list-item a, a.mat-mdc-list-item');
+  const chatLinks = document.querySelectorAll('a[href*="/app"], a.conversation, a[href*="/gem/"], gem-nav-list-item a, a.mat-mdc-list-item, [data-test-id="conversation"] a');
   const scrapedByChatId = new Map<string, { title: string, url: string, isPinned: boolean, isGem?: boolean }>();
   let cachedHtml = '';
 
@@ -720,7 +727,7 @@ function scrapeChatHistory(forceSend = false) {
       ariaLabel.toLowerCase().includes('pinned chat') ||
       textContent.toLowerCase().includes('angepinnter chat');
 
-    let title = (link.querySelector('.conversation-title, .text-content, .title-text, .gds-body-s, span')?.textContent || textContent || '').trim();
+    let title = (link.querySelector('.conversation-title, .text-content, .title-text, .gds-body-s, .gemini-sidenav-text, span')?.textContent || textContent || '').trim();
     if (isPinned) {
       title = title.replace(/Angepinnter Chat:|Pinned chat:|Angepinnt:|Pinned:|Angepinnt|Pinned/ig, '').trim();
     }

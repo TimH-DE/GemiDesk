@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-05-28
+
+### Added
+- **UI Redesign Support:** Rebuilt wrapper compatibility rules for Google Gemini's 2026 Neural Expressive redesign.
+- **Improved DOM Scraper:** Upgraded chat list item scraper to extract data from new dynamic Angular elements (`<gem-nav-list-item>`) and process `.gemini-sidenav-text` styling.
+- **Enhanced CSS Injection:** Updated style isolation rules to target and completely hide the new vertical navigation rail, Sparkle buttons, and account footers.
+
 ## [1.1.0] - 2026-05-02
 
 ### Added
@@ -44,3 +51,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [1.0.0]: https://github.com/TimH-DE/GemiDesk/releases/tag/v1.0.0
 [1.1.0]: https://github.com/TimH-DE/GemiDesk/releases/tag/v1.1.0
+[1.2.0]: https://github.com/TimH-DE/GemiDesk/releases/tag/v1.2.0
